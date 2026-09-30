@@ -1,8 +1,5 @@
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { app } from './app.ts';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ---------- Frontend: Vite en dev, estaticos en produccion ----------
 const IS_PROD = process.env.NODE_ENV === 'production';
@@ -11,7 +8,9 @@ const PORT = Number(process.env.PORT) || 3011;
 async function start() {
   if (IS_PROD) {
     const express = (await import('express')).default;
-    const distPath = path.resolve(__dirname, '..', 'dist');
+    // El build de esbuild empaqueta todo en dist/server.cjs y se ejecuta
+    // desde /app (WORKDIR del Dockerfile), asi que dist/ cuelga de cwd().
+    const distPath = path.resolve(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (_req, res) => res.sendFile(path.join(distPath, 'index.html')));
   } else {
