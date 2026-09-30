@@ -1,0 +1,33 @@
+# Compose para el Docker Manager de Hostinger. Se cuelga del mismo Traefik
+# del proyecto "n8n" (misma red n8n_default, mismo resolver de certificados)
+# que ya usa insublimex-registro-ventas.
+services:
+  inventario:
+    image: ghcr.io/belsyvargas99-maker/inventario-insublimex:latest
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3011
+      - ADMIN_PIN=${ADMIN_PIN}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - NEGOCIO_ID=${NEGOCIO_ID}
+    networks:
+      - n8n_default
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=n8n_default
+      - traefik.http.routers.inventario.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)
+      - traefik.http.routers.inventario.entrypoints=web,websecure
+      - traefik.http.routers.inventario.tls=true
+      - traefik.http.routers.inventario.tls.certresolver=mytlschallenge
+      - traefik.http.services.inventario.loadbalancer.server.port=3011
+      - traefik.http.middlewares.inventario.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.inventario.headers.browserXSSFilter=true
+      - traefik.http.middlewares.inventario.headers.STSSeconds=31536000
+      - traefik.http.routers.inventario.middlewares=inventario@docker
+
+networks:
+  n8n_default:
+    external: true
